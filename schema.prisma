@@ -1,0 +1,81 @@
+generator client { provider = "prisma-client-js" }
+datasource db { provider = "postgresql" url = env("DATABASE_URL") }
+
+model Player {
+  id           Int          @id @default(autoincrement())
+  name         String
+  code         String
+  nameplateUrl String?
+  server       String       @default("yako")
+  snapshots    XSnapshot[]
+  highscores   XHighScore[]
+  favorites    Favorite[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  @@unique([name, code, server])
+  @@index([name])
+  @@index([code])
+}
+
+model Weapon {
+  id          Int          @id @default(autoincrement())
+  name        String       @unique
+  slug        String       @unique
+  type        String
+  imageUrl    String?
+  snapshots   XSnapshot[]
+  highscores  XHighScore[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  @@index([type])
+}
+
+model XSnapshot {
+  id           Int      @id @default(autoincrement())
+  playerId     Int
+  weaponId     Int
+  rule         String
+  rank         Int
+  xp           Float
+  server       String   @default("yako")
+  snapshotTime DateTime
+  player       Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  weapon       Weapon   @relation(fields: [weaponId], references: [id], onDelete: Cascade)
+  @@index([server, rule, snapshotTime])
+  @@index([rule, xp])
+  @@index([weaponId, xp])
+  @@index([playerId, snapshotTime])
+}
+
+model XHighScore {
+  id         Int      @id @default(autoincrement())
+  playerId   Int
+  weaponId   Int
+  rule       String
+  highestXp  Float
+  bestRank   Int
+  server     String   @default("yako")
+  achievedAt DateTime
+  updatedAt  DateTime @updatedAt
+  player     Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  weapon     Weapon   @relation(fields: [weaponId], references: [id], onDelete: Cascade)
+  @@unique([playerId, weaponId, rule, server])
+  @@index([server, rule, highestXp])
+  @@index([server, weaponId, highestXp])
+}
+
+model Favorite {
+  id        Int      @id @default(autoincrement())
+  playerId  Int
+  visitorId String
+  createdAt DateTime @default(now())
+  player    Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  @@unique([playerId, visitorId])
+}
+
+model AdminUser {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
